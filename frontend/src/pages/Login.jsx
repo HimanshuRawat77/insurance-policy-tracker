@@ -72,7 +72,7 @@ export default function Login() {
         </button>
       </form>
 
-      {/* Footer */}
+      {/* footer */}
       <p className="text-sm text-gray-600 mt-6">
         Don’t have an account?{" "}
         <span className="text-blue-600 font-medium cursor-pointer">

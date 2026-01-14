@@ -106,7 +106,7 @@ export default function Signup() {
         </button>
       </form>
 
-      {/* Footer */}
+      {/* footer */}
       <p className="text-sm text-gray-600 mt-6">
         Already have an account?{" "}
         <span className="text-blue-600 font-medium cursor-pointer">

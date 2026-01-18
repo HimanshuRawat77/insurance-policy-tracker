@@ -17,6 +17,7 @@ export default function Signup() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -36,7 +37,7 @@ export default function Signup() {
     });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     const { fullName, email, phone, password, confirmPassword } = formData;
@@ -63,8 +64,38 @@ export default function Signup() {
       return;
     }
 
-    setError("");
-    console.log("Signup successful", formData);
+    try {
+      setError("");
+      setLoading(true);
+
+      const response = await fetch("http://localhost:5001/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          fullName,
+          email,
+          phone,
+          password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.message || "Signup failed");
+        setLoading(false);
+        return;
+      }
+
+      // Signup successful
+      setLoading(false);
+      navigate("/dashboard"); // redirect to login page
+    } catch (err) {
+      setLoading(false);
+      setError("Server error. Please try again later.");
+    }
   };
 
   return (
@@ -90,6 +121,7 @@ export default function Signup() {
               </p>
             )}
 
+            {/* Full Name */}
             <div>
               <label className="text-sm font-semibold text-slate-700">
                 Full Name
@@ -193,11 +225,13 @@ export default function Signup() {
               </div>
             </div>
 
+            {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
+              disabled={loading}
+              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2 disabled:opacity-70"
             >
-              Create Account
+              {loading ? "Creating Account..." : "Create Account"}
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Shield, Mail, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+const API_BASE = "http://localhost:5001";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -9,11 +10,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{6,}$/;
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -21,112 +20,65 @@ export default function Login() {
       return;
     }
 
-    if (!emailRegex.test(email)) {
-      setError("Please enter a valid email address");
-      return;
-    }
+    try {
+      setLoading(true);
+      setError("");
 
-    if (!passwordRegex.test(password)) {
-      setError(
-        "Password must be at least 6 characters and contain letters and numbers"
-      );
-      return;
-    }
+      const res = await fetch(`${API_BASE}/api/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      });
 
-    setError("");
-    console.log("Login successful");
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Login failed");
+      }
+      localStorage.setItem("token", data.token);
+
+      localStorage.setItem("user", JSON.stringify(data));
+
+      navigate("/dashboard");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center px-4 py-8">
-      <div className="w-full max-w-md">
-        <div className="bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 px-8 py-12 text-center">
-            <Shield className="w-10 h-10 text-white mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-white">Insurance Tracker</h1>
-            <p className="text-blue-100 text-sm">
-              Secure access to your insurance portfolio
-            </p>
-          </div>
+    <div className="min-h-screen flex items-center justify-center">
+      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-xl w-96">
+        <h2 className="text-xl font-bold mb-4">Login</h2>
 
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="px-8 py-8 space-y-6">
-            {error && (
-              <p className="text-red-600 text-sm font-medium text-center">
-                {error}
-              </p>
-            )}
+        {error && <p className="text-red-600 mb-3">{error}</p>}
 
-            {/* Email */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700">
-                Email Address
-              </label>
-              <div className="relative mt-2">
-                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className={`w-full pl-12 pr-4 py-3 rounded-lg border-2
-                    ${error ? "border-red-400" : "border-slate-200"}
-                    focus:outline-none focus:border-blue-500`}
-                />
-              </div>
-            </div>
+        <input
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
+        <input
+          type={showPassword ? "text" : "password"}
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          className="w-full mb-3 p-2 border rounded"
+        />
 
-            {/* Password */}
-            <div>
-              <label className="text-sm font-semibold text-slate-700">
-                Password
-              </label>
-              <div className="relative mt-2">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className={`w-full pl-12 pr-12 py-3 rounded-lg border-2
-                    ${error ? "border-red-400" : "border-slate-200"}
-                    focus:outline-none focus:border-blue-500`}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2"
-                >
-                  {showPassword ? <EyeOff /> : <Eye />}
-                </button>
-              </div>
-            </div>
-
-            {/* Submit */}
-            <button
-              type="submit"
-              className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-3 rounded-lg font-semibold flex items-center justify-center gap-2"
-            >
-              Sign In
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="px-8 py-6 bg-slate-50 text-center">
-            <p className="text-sm">
-              Don’t have an account?{" "}
-              <button
-                onClick={() => navigate("/Signup")}
-                className="text-blue-600 font-semibold"
-              >
-                Create one
-              </button>
-            </p>
-          </div>
-        </div>
-      </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded"
+        >
+          {loading ? "Logging in..." : "Login"}
+        </button>
+      </form>
     </div>
   );
 }
